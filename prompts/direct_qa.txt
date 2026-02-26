@@ -1,0 +1,14 @@
+Answer the following yes/no question using step-by-step chain-of-thought reasoning.
+
+Question: {question}
+
+<instructions>
+1. Break down the question into sub-problems or key considerations.
+2. Reason through each step carefully, citing relevant knowledge.
+3. Arrive at a final answer of either "Yes" or "No".
+</instructions>
+
+<response_format>
+REASONING: [Your step-by-step chain-of-thought reasoning]
+ANSWER: [Yes/No]
+</response_format>

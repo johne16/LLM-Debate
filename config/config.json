@@ -1,0 +1,26 @@
+{
+    "debate": {
+        "debater_a_model": "claude-haiku-4-5",
+        "debater_b_model": "claude-haiku-4-5",
+        "judge_model": "claude-haiku-4-5",
+        "debater_a_temperature": 0.7,
+        "debater_b_temperature": 0.7,
+        "judge_temperature": 0.3,
+        "max_tokens": 500,
+        "judge_max_tokens": 800,
+        "num_rounds": 3,
+        "num_judges": 1,
+        "sample_size": 100
+    },
+    "direct_qa": {
+        "model": "claude-haiku-4-5",
+        "temperature": 0.0,
+        "max_tokens": 500
+    },
+    "self_consistency": {
+        "model": "claude-haiku-4-5",
+        "temperature": 0.7,
+        "max_tokens": 500,
+        "sample_count": 5
+    }
+}

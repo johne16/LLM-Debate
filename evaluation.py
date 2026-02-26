@@ -3,6 +3,7 @@ Evaluation module: Compare debate pipeline vs baselines.
 Computes accuracy, statistical significance, and generates summary tables/figures.
 """
 
+import csv
 import json
 import os
 import glob
@@ -174,60 +175,43 @@ def evaluate_all(debate_results: list[dict] = None,
     return summary
 
 
-def print_evaluation_table(summary: dict):
-    """Print a formatted evaluation summary table."""
-    print("\n" + "=" * 60)
-    print("EVALUATION RESULTS")
-    print("=" * 60)
+def save_evaluation_csv(summary: dict, output_path: str = None):
+    """Save evaluation summary to CSV."""
+    if output_path is None:
+        output_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                   "results_summary.csv")
 
-    header = f"{'Method':<25} {'Correct':>8} {'Total':>8} {'Accuracy':>10}"
-    print(header)
-    print("-" * 60)
+    with open(output_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(["Method", "Correct", "Total", "Accuracy"])
+        for method_key, label in [("debate", "Debate Pipeline"),
+                                   ("direct_qa", "Direct QA"),
+                                   ("self_consistency", "Self-Consistency")]:
+            data = summary.get(method_key, {})
+            writer.writerow([label, data.get("correct", 0), data.get("total", 0),
+                             f"{data.get('accuracy', 0.0):.4f}"])
 
-    for method_key, label in [("debate", "Debate Pipeline"),
-                               ("direct_qa", "Direct QA"),
-                               ("self_consistency", "Self-Consistency")]:
-        data = summary.get(method_key, {})
-        correct = data.get("correct", 0)
-        total = data.get("total", 0)
-        acc = data.get("accuracy", 0.0)
-        print(f"{label:<25} {correct:>8} {total:>8} {acc:>9.2%}")
+        writer.writerow([])
+        writer.writerow(["Metric", "Value"])
+        if "consensus_rate" in summary:
+            writer.writerow(["Consensus Rate", f"{summary['consensus_rate']:.4f}"])
+            writer.writerow(["Consensus Count", summary.get("consensus_count", 0)])
+        if summary.get("avg_confidence_correct") is not None:
+            writer.writerow(["Avg Confidence (Correct)", f"{summary['avg_confidence_correct']:.2f}"])
+        if summary.get("avg_confidence_incorrect") is not None:
+            writer.writerow(["Avg Confidence (Incorrect)", f"{summary['avg_confidence_incorrect']:.2f}"])
 
-    print("-" * 60)
+        for test_key, label in [("mcnemar_debate_vs_dqa", "Debate vs Direct QA"),
+                                 ("mcnemar_debate_vs_sc", "Debate vs Self-Consistency")]:
+            if test_key in summary:
+                test = summary[test_key]
+                writer.writerow([])
+                writer.writerow([f"McNemar ({label})", ""])
+                writer.writerow(["Statistic", f"{test['statistic']:.4f}"])
+                writer.writerow(["p-value", f"{test['p_value']:.4f}"])
+                writer.writerow(["Significant (alpha=0.05)", "YES" if test["significant"] else "NO"])
 
-    # Consensus rate
-    if "consensus_rate" in summary:
-        rate = summary["consensus_rate"]
-        count = summary.get("consensus_count", 0)
-        total = summary.get("debate", {}).get("total", 0)
-        print(f"\nConsensus rate: {rate:.2%} ({count}/{total} questions skipped debate)")
-
-    # Judge confidence on correct vs incorrect
-    conf_correct = summary.get("avg_confidence_correct")
-    conf_incorrect = summary.get("avg_confidence_incorrect")
-    if conf_correct is not None or conf_incorrect is not None:
-        print(f"\nAvg judge confidence (1-5):")
-        if conf_correct is not None:
-            print(f"  On correct questions:   {conf_correct:.2f}")
-        else:
-            print(f"  On correct questions:   N/A")
-        if conf_incorrect is not None:
-            print(f"  On incorrect questions: {conf_incorrect:.2f}")
-        else:
-            print(f"  On incorrect questions: N/A")
-
-    # Statistical significance
-    for test_key, label in [("mcnemar_debate_vs_dqa", "Debate vs Direct QA"),
-                             ("mcnemar_debate_vs_sc", "Debate vs Self-Consistency")]:
-        if test_key in summary:
-            test = summary[test_key]
-            sig = "YES" if test["significant"] else "NO"
-            print(f"\nMcNemar's test ({label}):")
-            print(f"  Statistic: {test['statistic']:.4f}")
-            print(f"  p-value:   {test['p_value']:.4f}")
-            print(f"  Significant (alpha=0.05): {sig}")
-
-    print("=" * 60)
+    print(f"Results saved to: {output_path}")
 
 
 def generate_results_figure(summary: dict, output_path: str = None):
@@ -353,6 +337,6 @@ def generate_heatmap(debate_results: list[dict] = None,
 
 if __name__ == "__main__":
     summary = evaluate_all()
-    print_evaluation_table(summary)
+    save_evaluation_csv(summary)
     generate_results_figure(summary)
     generate_heatmap()

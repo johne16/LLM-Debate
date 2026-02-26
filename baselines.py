@@ -95,8 +95,11 @@ def run_self_consistency(client: anthropic.Anthropic, question: str,
 
     if yes_count > no_count:
         final_answer = "Yes"
-    else:
+    elif no_count > yes_count:
         final_answer = "No"
+    else:
+        # Tie: use first sample's answer
+        final_answer = samples[0]["answer"]
 
     return {
         "answer": final_answer,

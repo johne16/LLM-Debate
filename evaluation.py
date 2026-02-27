@@ -7,10 +7,15 @@ import csv
 import json
 import os
 import glob
+from datetime import datetime
+import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
+import numpy as np
 from scipy import stats
 
 
 LOGS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
+TIMESTAMP = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 
 def load_latest_log(prefix: str) -> dict | None:
@@ -21,8 +26,6 @@ def load_latest_log(prefix: str) -> dict | None:
         return None
     with open(files[0], "r", encoding="utf-8") as f:
         return json.load(f)
-
-
 
 
 def compute_accuracy(results: list[dict]) -> float:
@@ -67,45 +70,33 @@ def mcnemar_test(results_a: list[bool], results_b: list[bool]) -> dict:
     }
 
 
-def evaluate_all(debate_results: list[dict] = None,
-                 direct_qa_results: list[dict] = None,
-                 self_consistency_results: list[dict] = None) -> dict:
+def evaluate_all() -> dict:
     """
     Run full evaluation comparing debate pipeline vs baselines.
-
-    Args:
-        debate_results: List of debate result dicts (from orchestrator).
-                       If None, loads from logs.
-        direct_qa_results: Direct QA results. If None, loads from logs.
-        self_consistency_results: Self-consistency results. If None, loads from logs.
+    Loads the most recent log file for each method and extracts
+    both results and config parameters.
 
     Returns:
-        Evaluation summary dict.
+        Evaluation summary dict with accuracy, counts, and config for each method.
     """
-    # Load from logs if not provided
-    if debate_results is None:
-        debate_log = load_latest_log("debate_")
-        if debate_log:
-            debate_results = debate_log.get("results", [])
-        else:
-            print("No debate logs found.")
-            debate_results = []
+    debate_log = load_latest_log("debate_")
+    if debate_log is None:
+        print("No debate logs found.")
+        debate_log = {}
 
-    if direct_qa_results is None:
-        direct_qa_log = load_latest_log("baseline_direct_qa_")
-        if direct_qa_log:
-            direct_qa_results = direct_qa_log.get("results", [])
-        else:
-            print("No Direct QA baseline logs found.")
-            direct_qa_results = []
+    direct_qa_log = load_latest_log("baseline_direct_qa_")
+    if direct_qa_log is None:
+        print("No Direct QA baseline logs found.")
+        direct_qa_log = {}
 
-    if self_consistency_results is None:
-        self_consistency_log = load_latest_log("baseline_self_consistency_")
-        if self_consistency_log:
-            self_consistency_results = self_consistency_log.get("results", [])
-        else:
-            print("No Self-Consistency baseline logs found.")
-            self_consistency_results = []
+    self_consistency_log = load_latest_log("baseline_self_consistency_")
+    if self_consistency_log is None:
+        print("No Self-Consistency baseline logs found.")
+        self_consistency_log = {}
+
+    debate_results = debate_log.get("results", [])
+    direct_qa_results = direct_qa_log.get("results", [])
+    self_consistency_results = self_consistency_log.get("results", [])
 
     # Compute accuracies
     debate_accuracy = compute_accuracy(debate_results)
@@ -116,17 +107,20 @@ def evaluate_all(debate_results: list[dict] = None,
         "debate": {
             "accuracy": debate_accuracy,
             "total": len(debate_results),
-            "correct": sum(1 for r in debate_results if r.get("correct") is True)
+            "correct": sum(1 for r in debate_results if r.get("correct") is True),
+            "config": debate_log.get("config", {})
         },
         "direct_qa": {
             "accuracy": direct_qa_accuracy,
             "total": len(direct_qa_results),
-            "correct": sum(1 for r in direct_qa_results if r.get("correct") is True)
+            "correct": sum(1 for r in direct_qa_results if r.get("correct") is True),
+            "config": direct_qa_log.get("config", {})
         },
         "self_consistency": {
             "accuracy": self_consistency_accuracy,
             "total": len(self_consistency_results),
-            "correct": sum(1 for r in self_consistency_results if r.get("correct") is True)
+            "correct": sum(1 for r in self_consistency_results if r.get("correct") is True),
+            "config": self_consistency_log.get("config", {})
         }
     }
 
@@ -179,7 +173,7 @@ def save_evaluation_csv(summary: dict, output_path: str = None):
     """Save evaluation summary to CSV."""
     if output_path is None:
         output_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                   "results_summary.csv")
+                                   f"results_summary_{TIMESTAMP}.csv")
 
     with open(output_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
@@ -211,20 +205,24 @@ def save_evaluation_csv(summary: dict, output_path: str = None):
                 writer.writerow(["p-value", f"{test['p_value']:.4f}"])
                 writer.writerow(["Significant (alpha=0.05)", "YES" if test["significant"] else "NO"])
 
+        writer.writerow([])
+        writer.writerow(["Configuration"])
+        writer.writerow(["Method", "Parameter", "Value"])
+        for method_key, label in [("debate", "Debate Pipeline"),
+                                   ("direct_qa", "Direct QA"),
+                                   ("self_consistency", "Self-Consistency")]:
+            config = summary.get(method_key, {}).get("config", {})
+            for param, value in config.items():
+                writer.writerow([label, param, value])
+
     print(f"Results saved to: {output_path}")
 
 
 def generate_results_figure(summary: dict, output_path: str = None):
     """
     Generate a bar chart comparing method accuracies.
-    Saves to output_path or displays.
+    Saves to output_path.
     """
-    try:
-        import matplotlib.pyplot as plt
-    except ImportError:
-        print("matplotlib not available. Skipping figure generation.")
-        return
-
     methods = []
     accuracies = []
     for method_key, label in [("debate", "Debate\nPipeline"),
@@ -252,41 +250,28 @@ def generate_results_figure(summary: dict, output_path: str = None):
 
     if output_path is None:
         output_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                   "results_comparison.png")
+                                   f"results_comparison_{TIMESTAMP}.png")
     plt.savefig(output_path, dpi=150)
     print(f"Figure saved to: {output_path}")
     plt.close()
 
 
-def generate_heatmap(debate_results: list[dict] = None,
-                     direct_qa_results: list[dict] = None,
-                     self_consistency_results: list[dict] = None,
-                     output_path: str = None):
+def generate_heatmap(output_path: str = None):
     """
     Generate a per-question heatmap showing correct/incorrect across all three methods.
+    Loads the most recent log file for each method.
     Questions on one axis, methods on the other.
     Saves to output_path or a default file.
     """
-    try:
-        import matplotlib.pyplot as plt
-        import matplotlib.colors as mcolors
-        import numpy as np
-    except ImportError:
-        print("matplotlib/numpy not available. Skipping heatmap generation.")
-        return
 
-    # Load from logs if not provided
-    if debate_results is None:
-        debate_log = load_latest_log("debate_")
-        debate_results = debate_log.get("results", []) if debate_log else []
+    debate_log = load_latest_log("debate_")
+    debate_results = debate_log.get("results", []) if debate_log else []
 
-    if direct_qa_results is None:
-        direct_qa_log = load_latest_log("baseline_direct_qa_")
-        direct_qa_results = direct_qa_log.get("results", []) if direct_qa_log else []
+    direct_qa_log = load_latest_log("baseline_direct_qa_")
+    direct_qa_results = direct_qa_log.get("results", []) if direct_qa_log else []
 
-    if self_consistency_results is None:
-        self_consistency_log = load_latest_log("baseline_self_consistency_")
-        self_consistency_results = self_consistency_log.get("results", []) if self_consistency_log else []
+    self_consistency_log = load_latest_log("baseline_self_consistency_")
+    self_consistency_results = self_consistency_log.get("results", []) if self_consistency_log else []
 
     # Filter to scored only
     debate_scored = [r for r in debate_results if r.get("correct") is not None]
@@ -329,7 +314,7 @@ def generate_heatmap(debate_results: list[dict] = None,
 
     if output_path is None:
         output_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                   "results_heatmap.png")
+                                   f"results_heatmap_{TIMESTAMP}.png")
     plt.savefig(output_path, dpi=150)
     print(f"Heatmap saved to: {output_path}")
     plt.close()

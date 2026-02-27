@@ -233,7 +233,7 @@ def run_single_debate(client: anthropic.Anthropic, question: str,
             initial_positions=initial_positions,
             rounds=rounds,
             judge_result=judge_result,
-            config=config,
+            config=debate_cfg,
             consensus_skip=consensus_skip
         )
 
@@ -277,7 +277,7 @@ def run_debate_pipeline(config_path: str = None) -> dict:
     scored = [r for r in results if r.get("correct") is not None]
     correct_count = sum(1 for r in scored if r["correct"])
     accuracy = correct_count / len(scored) if scored else 0.0
-    log_path = save_debate_batch_log(results, config)
+    log_path = save_debate_batch_log(results, config["debate"])
 
     print(f"\n{'='*50}")
     print(f"DEBATE PIPELINE RESULTS")

@@ -1,0 +1,33 @@
+Accuracy
+Temperature,Method,Original,Corrected,Delta
+Temperature 0.3,Haiku 1-Judge,0.7500,0.7500,+0.0000
+Temperature 0.3,Haiku 3-Judge,0.7700,0.7900,+0.0200
+Temperature 0.3,Sonnet 1-Judge,0.8200,0.8200,+0.0000
+Temperature 0.3,Sonnet 3-Judge,0.8100,0.8100,+0.0000
+Temperature 0.3,Direct QA,0.8100,0.8600,+0.0500
+Temperature 0.3,Self-Consistency,0.8600,0.8700,+0.0100
+Temperature 0.7,Haiku 1-Judge,0.7700,0.7900,+0.0200
+Temperature 0.7,Haiku 3-Judge,0.8000,0.8000,+0.0000
+Temperature 0.7,Sonnet 1-Judge,0.7900,0.8000,+0.0100
+Temperature 0.7,Sonnet 3-Judge,0.8000,0.8000,+0.0000
+Temperature 0.7,Direct QA,0.7600,0.8400,+0.0800
+Temperature 0.7,Self-Consistency,0.8400,0.8400,+0.0000
+
+McNemar's Test
+Temperature,Comparison,Chi2 (orig),p (orig),Sig (orig),Chi2 (corr),p (corr),Sig (corr),A right B wrong (corr),A wrong B right (corr)
+Temperature 0.3,Haiku 1-Judge vs Direct QA,1.5625,0.2113,NO,7.6923,0.0055,YES,1,12
+Temperature 0.3,Haiku 1-Judge vs Self-Consistency,6.6667,0.0098,YES,8.6429,0.0033,YES,1,13
+Temperature 0.3,Haiku 3-Judge vs Direct QA,0.5625,0.4533,NO,3.2727,0.0704,NO,2,9
+Temperature 0.3,Haiku 3-Judge vs Self-Consistency,3.7647,0.0523,NO,3.5000,0.0614,NO,3,11
+Temperature 0.3,Sonnet 1-Judge vs Direct QA,0.0000,1.0000,NO,1.1250,0.2888,NO,2,6
+Temperature 0.3,Sonnet 1-Judge vs Self-Consistency,0.7500,0.3865,NO,1.4545,0.2278,NO,3,8
+Temperature 0.3,Sonnet 3-Judge vs Direct QA,0.0714,0.7893,NO,1.4545,0.2278,NO,3,8
+Temperature 0.3,Sonnet 3-Judge vs Self-Consistency,1.0667,0.3017,NO,1.7857,0.1814,NO,4,10
+Temperature 0.7,Haiku 1-Judge vs Direct QA,0.0000,1.0000,NO,1.2308,0.2673,NO,4,9
+Temperature 0.7,Haiku 1-Judge vs Self-Consistency,3.2727,0.0704,NO,1.2308,0.2673,NO,4,9
+Temperature 0.7,Haiku 3-Judge vs Direct QA,0.5625,0.4533,NO,0.7500,0.3865,NO,4,8
+Temperature 0.7,Haiku 3-Judge vs Self-Consistency,0.9000,0.3428,NO,0.9000,0.3428,NO,3,7
+Temperature 0.7,Sonnet 1-Judge vs Direct QA,0.2105,0.6464,NO,0.6429,0.4227,NO,5,9
+Temperature 0.7,Sonnet 1-Judge vs Self-Consistency,1.0667,0.3017,NO,0.6429,0.4227,NO,5,9
+Temperature 0.7,Sonnet 3-Judge vs Direct QA,0.5000,0.4795,NO,0.6429,0.4227,NO,5,9
+Temperature 0.7,Sonnet 3-Judge vs Self-Consistency,0.7500,0.3865,NO,0.7500,0.3865,NO,4,8

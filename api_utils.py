@@ -8,7 +8,7 @@ import anthropic
 
 def call_llm(client: anthropic.Anthropic, model: str, prompt: str = None,
              temperature: float = 0.7, max_tokens: int = 500,
-             max_retries: int = 5, base_delay: float = 2.0,
+             max_retries: int = 8, base_delay: float = 2.0,
              system: str = None, messages: list = None) -> str:
     """
     Call the Anthropic API with exponential backoff retry on rate limit
